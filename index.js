@@ -63,10 +63,44 @@ function createExclusiveChannels(
   };
 }
 
+function createObserveList() {
+  let personSet = new Set();
+
+  function hasPerson(id) {
+    return personSet.has(id);
+  }
+
+  function addPerson(id) {
+    personSet.add(id);
+  }
+
+  function removePerson(id) {
+    personSet.delete(id);
+  }
+
+  function clearPerson() {
+    personSet.clear();
+  }
+
+  function getList() {
+    return [...personSet];
+  }
+
+  return {
+    hasPerson,
+    addPerson,
+    removePerson,
+    clearPerson,
+    getList,
+  };
+}
+
 const exclusiveChannelSet = createExclusiveChannels([], {
   id: process.env.BOT_SENDING_CHANNEL_ID,
   name: process.env.BOT_SENDING_CHANNEL_NAME,
 });
+
+const blackList = createObserveList();
 
 const client = new Client({
   intents: ['GUILDS', 'GUILD_MESSAGES', 'DIRECT_MESSAGES'],
@@ -74,10 +108,16 @@ const client = new Client({
 
 client.on('ready', readyListener(client, exclusiveChannelSet));
 
-client.on('messageCreate', messageCreateListener(client, exclusiveChannelSet));
+client.on(
+  'messageCreate',
+  messageCreateListener(client, exclusiveChannelSet, blackList)
+);
 
 client.on('messageUpdate', messageUpdateListener(client, exclusiveChannelSet));
 
-client.on('messageDelete', messageDeleteListener(client, exclusiveChannelSet));
+client.on(
+  'messageDelete',
+  messageDeleteListener(client, exclusiveChannelSet, blackList)
+);
 
 client.login(process.env.TOKEN);

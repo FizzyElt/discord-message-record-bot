@@ -4,18 +4,24 @@ const commandMapping = require('../utils/commandRegex.js');
 
 const commandRegex = /^(\:\:([a-z|A-Z|0-9]*)){1}/g;
 
-function messageCreateListener(client, exclusiveChannelSet) {
-  return function (message) {
+function messageCreateListener(client, exclusiveChannelSet, blackList) {
+  return async function (message) {
     const matchString = message.content.match(commandRegex);
     if (matchString) {
       const [str = ''] = matchString;
-      const getCommandOperation = commandMapping(client, exclusiveChannelSet);
+
+      const getCommandOperation = commandMapping(
+        client,
+        { guildId: message.guildId, operator: message.member },
+        exclusiveChannelSet,
+        blackList
+      );
 
       const commandOperation = getCommandOperation(str);
 
-      const resoleString = commandOperation(message.content);
+      const resolveString = await commandOperation(message.content);
 
-      message.channel.send(resoleString);
+      message.channel.send(resolveString);
 
       return;
     }

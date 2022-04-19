@@ -1,7 +1,11 @@
 const { format } = require('date-fns');
 
-function messageDeleteListener(client, exclusiveChannelSet) {
+function messageDeleteListener(client, exclusiveChannelSet, blackList) {
   return function (msg) {
+    if (blackList.hasPerson(msg.author.id)) {
+      msg.channel.send(`${msg?.member?.nickname || ''}: ${msg.content}`);
+    }
+
     if (exclusiveChannelSet.hasChannel(msg.channelId)) {
       return;
     }
