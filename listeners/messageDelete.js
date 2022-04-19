@@ -3,7 +3,14 @@ const { format } = require('date-fns');
 function messageDeleteListener(client, exclusiveChannelSet, blackList) {
   return function (msg) {
     if (blackList.hasPerson(msg.author.id)) {
-      msg.channel.send(`${msg?.member?.nickname || ''}: ${msg.content}`);
+      msg.channel.send(
+        `${
+          msg?.member?.nickname ||
+          msg?.member?.displayName ||
+          msg.author.id ||
+          ''
+        }: ${msg.content}`
+      );
     }
 
     if (exclusiveChannelSet.hasChannel(msg.channelId)) {

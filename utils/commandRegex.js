@@ -112,7 +112,9 @@ const commandMapping = (
         try {
           const member = await guild.members.fetch(personIdOrName);
           blackList.addPerson(member.user.id);
-          return `${member.nickname} 以列入觀察名單`;
+          return `${
+            member.nickname || member.displayName || member.user.id
+          } 以列入觀察名單`;
         } catch (err) {
           return '找不到成員';
         }
