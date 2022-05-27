@@ -10,10 +10,7 @@ const {
 
 require('dotenv').config();
 
-function createExclusiveChannels(
-  defaultArr = [],
-  sendChannel = { id: '', name: '' }
-) {
+function createExclusiveChannels(defaultArr = [], sendChannel = { id: '', name: '' }) {
   let channelMap = new Map([
     ...defaultArr.map(({ name, id }) => [id, name]),
     [sendChannel.id, sendChannel.name],
@@ -32,10 +29,7 @@ function createExclusiveChannels(
   }
 
   function addChannels(list = []) {
-    channelMap = new Map([
-      ...channelMap,
-      ...list.map((value) => [value.id, value.name]),
-    ]);
+    channelMap = new Map([...channelMap, ...list.map((value) => [value.id, value.name])]);
   }
 
   function removeChannel(id) {
@@ -108,16 +102,10 @@ const client = new Client({
 
 client.on('ready', readyListener(client, exclusiveChannelSet));
 
-client.on(
-  'messageCreate',
-  messageCreateListener(client, exclusiveChannelSet, blackList)
-);
+client.on('messageCreate', messageCreateListener(client, exclusiveChannelSet, blackList));
 
-client.on('messageUpdate', messageUpdateListener(client, exclusiveChannelSet));
+client.on('messageUpdate', messageUpdateListener(client, exclusiveChannelSet, blackList));
 
-client.on(
-  'messageDelete',
-  messageDeleteListener(client, exclusiveChannelSet, blackList)
-);
+client.on('messageDelete', messageDeleteListener(client, exclusiveChannelSet, blackList));
 
 client.login(process.env.TOKEN);

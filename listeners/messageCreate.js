@@ -34,9 +34,7 @@ function messageCreateListener(client, exclusiveChannelSet, blackList) {
       return;
     }
 
-    const sendChannel = client.channels.cache.get(
-      process.env.BOT_SENDING_CHANNEL_ID
-    );
+    const sendChannel = client.channels.cache.get(process.env.BOT_SENDING_CHANNEL_ID);
 
     const channelName = message.channel.name;
     const userName = message.author.username;

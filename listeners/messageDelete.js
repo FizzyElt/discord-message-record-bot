@@ -3,23 +3,19 @@ const { format } = require('date-fns');
 function messageDeleteListener(client, exclusiveChannelSet, blackList) {
   return function (msg) {
     if (blackList.hasPerson(msg.author.id)) {
-      msg.channel.send(
-        `${
-          msg?.member?.nickname ||
-          msg?.member?.displayName ||
-          msg.author.id ||
-          ''
-        }: ${msg.content}`
-      );
+      console.log(msg)
+      msg.channel.send({
+        content: `${msg?.member?.nickname || msg?.member?.displayName || msg.author.id || ''}: ${
+          msg.content
+        }`,
+      });
     }
 
     if (exclusiveChannelSet.hasChannel(msg.channelId)) {
       return;
     }
 
-    const sendChannel = client.channels.cache.get(
-      process.env.BOT_SENDING_CHANNEL_ID
-    );
+    const sendChannel = client.channels.cache.get(process.env.BOT_SENDING_CHANNEL_ID);
 
     const channelName = msg.channel.name;
     const userName = msg.author.username;
