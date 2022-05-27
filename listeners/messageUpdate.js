@@ -1,14 +1,20 @@
 const { format } = require('date-fns');
 
-function messageUpdateListener(client, exclusiveChannelSet) {
+function messageUpdateListener(client, exclusiveChannelSet, blackList) {
   return function (oldMsg, newMsg) {
+    if (blackList.hasPerson(newMsg.author.id)) {
+      newMsg.channel.send({
+        content: `${
+          newMsg?.member?.nickname || newMsg?.member?.displayName || newMsg?.author?.id || ''
+        } **編輯了**: ${oldMsg.content}`,
+      });
+    }
+
     if (exclusiveChannelSet.hasChannel(newMsg.channelId)) {
       return;
     }
 
-    const sendChannel = client.channels.cache.get(
-      process.env.BOT_SENDING_CHANNEL_ID
-    );
+    const sendChannel = client.channels.cache.get(process.env.BOT_SENDING_CHANNEL_ID);
 
     const channelName = newMsg.channel.name;
     const userName = newMsg.author.username;
