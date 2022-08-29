@@ -6,6 +6,7 @@ const commandRegex = /^(\:\:([a-z|A-Z|0-9]*)){1}/g;
 
 function messageCreateListener(client, exclusiveChannelSet, blackList) {
   return async function (message) {
+    // command checking
     const matchString = message.content.match(commandRegex);
     if (matchString) {
       const [str = ''] = matchString;
@@ -26,13 +27,16 @@ function messageCreateListener(client, exclusiveChannelSet, blackList) {
       return;
     }
 
-    if (R.equals(message.author.id, client.user.id)) {
+    const discordInviteLinkContain = /discord\.gg\/\w*\d*/;
+    if (discordInviteLinkContain.test(message.content)) {
+      message.delete();
       return;
     }
 
-    if (exclusiveChannelSet.hasChannel(message.channelId)) {
-      return;
-    }
+    // record message flow
+    if (R.equals(message.author.id, client.user.id)) return;
+
+    if (exclusiveChannelSet.hasChannel(message.channelId)) return;
 
     const sendChannel = client.channels.cache.get(process.env.BOT_SENDING_CHANNEL_ID);
 
