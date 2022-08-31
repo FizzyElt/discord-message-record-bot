@@ -10,9 +10,9 @@ function messageUpdateListener(client, exclusiveChannelSet, blackList) {
       });
     }
 
-    if (exclusiveChannelSet.hasChannel(newMsg.channelId)) {
-      return;
-    }
+    if (newMsg.author.bot) return;
+
+    if (exclusiveChannelSet.hasChannel(newMsg.channelId)) return;
 
     const sendChannel = client.channels.cache.get(process.env.BOT_SENDING_CHANNEL_ID);
 

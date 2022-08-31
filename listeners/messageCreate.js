@@ -34,6 +34,8 @@ function messageCreateListener(client, exclusiveChannelSet, blackList) {
     }
 
     // record message flow
+    if (message.author.bot) return;
+
     if (R.equals(message.author.id, client.user.id)) return;
 
     if (exclusiveChannelSet.hasChannel(message.channelId)) return;

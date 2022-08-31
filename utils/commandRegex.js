@@ -1,13 +1,9 @@
+const { ChannelType } = require('discord.js');
 const R = require('ramda');
 require('dotenv').config();
 const ADMIN_ROLE_ID = process.env.ADMIN_ROLE_ID;
 
-const commandMapping = (
-  client,
-  { operator, guildId },
-  exclusiveChannelSet,
-  blackList
-) =>
+const commandMapping = (client, { operator, guildId }, exclusiveChannelSet, blackList) =>
   R.cond([
     [
       R.equals('::addChannels'),
@@ -15,18 +11,18 @@ const commandMapping = (
         const channelIdOrName = str.replace('::addChannels', '').trim();
 
         const channel = client.channels.cache.find(
-          (value) =>
-            R.equals(value.id, channelIdOrName) ||
-            R.equals(value.name, channelIdOrName)
+          (value) => R.equals(value.id, channelIdOrName) || R.equals(value.name, channelIdOrName)
         );
 
         if (!channel) {
           return '找不到頻道';
         }
 
-        if (R.equals(channel.type, 'GUILD_CATEGORY')) {
-          const subChannels = channel.children
-            .filter((value) => !R.equals(value.type, 'GUILD_VOICE'))
+        console.log(channel.type);
+
+        if (R.equals(channel.type, ChannelType.GuildCategory)) {
+          const subChannels = channel.guild.channels.cache
+            .filter((value) => !R.equals(value.type, ChannelType.GuildVoice))
             .map((value) => ({
               id: value.id,
               name: value.name,
@@ -37,7 +33,7 @@ const commandMapping = (
           return `已排除 **${channel.name}** 下的所有文字頻道`;
         }
 
-        if (R.equals(channel.type, 'GUILD_TEXT')) {
+        if (R.equals(channel.type, ChannelType.GuildText)) {
           exclusiveChannelSet.addChannel(channel.id, channel.name);
           return `已排除 **${channel.name}**`;
         }
@@ -51,18 +47,16 @@ const commandMapping = (
         const channelIdOrName = str.replace('::removeChannels', '').trim();
 
         const channel = client.channels.cache.find(
-          (value) =>
-            R.equals(value.id, channelIdOrName) ||
-            R.equals(value.name, channelIdOrName)
+          (value) => R.equals(value.id, channelIdOrName) || R.equals(value.name, channelIdOrName)
         );
 
         if (!channel) {
           return '找不到頻道';
         }
 
-        if (R.equals(channel.type, 'GUILD_CATEGORY')) {
-          const subChannels = channel.children
-            .filter((value) => R.equals(value.type, 'GUILD_VOICE'))
+        if (R.equals(channel.type, ChannelType.GuildCategory)) {
+          const subChannels = channel.guild.channels.cache
+            .filter((value) => R.equals(value.type, ChannelType.GuildVoice))
             .map((value) => ({
               id: value.id,
               name: value.name,
@@ -73,7 +67,7 @@ const commandMapping = (
           return `已監聽 **${channel.name}** 下的所有文字頻道`;
         }
 
-        if (R.equals(channel.type, 'GUILD_TEXT')) {
+        if (R.equals(channel.type, ChannelType.GuildText)) {
           exclusiveChannelSet.removeChannel(channel.id);
           return `已排除 **${channel.name}**`;
         }
@@ -85,9 +79,7 @@ const commandMapping = (
       R.equals('::listChannels'),
       R.always((str) => {
         const channels = exclusiveChannelSet.getChannelMap();
-        const channelNames = [...channels.entries()].map(
-          ([id, name]) => `(${id}) **${name}**`
-        );
+        const channelNames = [...channels.entries()].map(([id, name]) => `(${id}) **${name}**`);
 
         return `目前排除的頻道有：\n${channelNames.join('\n')}`;
       }),
@@ -101,9 +93,7 @@ const commandMapping = (
           return '你沒有權限執行此操作';
         }
 
-        const guild = client.guilds.cache.find((guild) =>
-          R.equals(guild.id, guildId)
-        );
+        const guild = client.guilds.cache.find((guild) => R.equals(guild.id, guildId));
 
         if (!guild) {
           return '找不到伺服器';
@@ -112,9 +102,7 @@ const commandMapping = (
         try {
           const member = await guild.members.fetch(personIdOrName);
           blackList.addPerson(member.user.id);
-          return `${
-            member.nickname || member.displayName || member.user.id
-          } 以列入觀察名單`;
+          return `${member.nickname || member.displayName || member.user.id} 以列入觀察名單`;
         } catch (err) {
           return '找不到成員';
         }
