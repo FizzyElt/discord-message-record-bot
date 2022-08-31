@@ -27,12 +27,6 @@ function messageCreateListener(client, exclusiveChannelSet, blackList) {
       return;
     }
 
-    const discordInviteLinkContain = /discord\.gg\/\w*\d*/;
-    if (discordInviteLinkContain.test(message.content)) {
-      message.delete();
-      return;
-    }
-
     // record message flow
     if (message.author.bot) return;
 
