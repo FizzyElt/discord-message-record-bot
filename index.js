@@ -1,4 +1,4 @@
-const { Client } = require('discord.js');
+const { Client, IntentsBitField, BitField, GatewayIntentBits } = require('discord.js');
 const { format } = require('date-fns');
 const R = require('ramda');
 const {
@@ -97,7 +97,13 @@ const exclusiveChannelSet = createExclusiveChannels([], {
 const blackList = createObserveList();
 
 const client = new Client({
-  intents: ['GUILDS', 'GUILD_MESSAGES', 'DIRECT_MESSAGES'],
+  intents: [
+    GatewayIntentBits.Guilds,
+    GatewayIntentBits.GuildMembers,
+    GatewayIntentBits.GuildMessages,
+    GatewayIntentBits.MessageContent,
+    GatewayIntentBits.DirectMessages,
+  ],
 });
 
 client.on('ready', readyListener(client, exclusiveChannelSet));
