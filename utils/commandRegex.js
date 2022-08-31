@@ -21,7 +21,7 @@ const commandMapping = (client, { operator, guildId }, exclusiveChannelSet, blac
         console.log(channel.type);
 
         if (R.equals(channel.type, ChannelType.GuildCategory)) {
-          const subChannels = channel.guild.channels.cache
+          const subChannels = channel.children.cache
             .filter((value) => !R.equals(value.type, ChannelType.GuildVoice))
             .map((value) => ({
               id: value.id,
@@ -55,7 +55,7 @@ const commandMapping = (client, { operator, guildId }, exclusiveChannelSet, blac
         }
 
         if (R.equals(channel.type, ChannelType.GuildCategory)) {
-          const subChannels = channel.guild.channels.cache
+          const subChannels = channel.children.cache
             .filter((value) => R.equals(value.type, ChannelType.GuildVoice))
             .map((value) => ({
               id: value.id,

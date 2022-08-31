@@ -27,6 +27,12 @@ function messageCreateListener(client, exclusiveChannelSet, blackList) {
       return;
     }
 
+    const discordInviteRegex = /discord\.gg\/(\w|\d)+/;
+    if (discordInviteRegex.test(message.content)) {
+      message.delete();
+      return;
+    }
+
     // record message flow
     if (message.author.bot) return;
 
