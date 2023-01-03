@@ -1,36 +1,38 @@
 const { format } = require('date-fns');
+const O = require('fp-ts/Option');
+const R = require('ramda');
+const { pipe } = require('fp-ts/function');
 
-function messageDeleteListener(client, exclusiveChannelSet, blackList) {
-  return function (msg) {
-    if (blackList.hasPerson(msg.author.id)) {
-      msg.channel.send({
-        content: `${msg?.member?.nickname || msg?.member?.displayName || msg.author.id || ''}: ${
-          msg.content
-        }`,
-      });
-    }
+function messageDeleteListener({ client, exclusiveChannelSet }) {
+  return function (message) {
+    pipe(
+      O.some({ message, client }),
+      O.chain((params) => (params.author.bot ? O.none : O.some(params))),
+      O.chain((params) =>
+        params.exclusiveChannelSet.hasChannel(params.message.channelId) ? O.none : O.some(params)
+      ),
+      O.match(R.identity, () => {
+        const { client, message } = params;
 
-    if (msg.author.bot) return;
+        const sendChannel = client.channels.cache.get(process.env.BOT_SENDING_CHANNEL_ID);
 
-    if (exclusiveChannelSet.hasChannel(msg.channelId)) return;
+        const channelName = message.channel.name;
+        const userName = message.author.username;
+        const discriminator = message.author.discriminator;
 
-    const sendChannel = client.channels.cache.get(process.env.BOT_SENDING_CHANNEL_ID);
+        const sendString = `${channelName} **[Created：${format(
+          message.createdAt,
+          'yyyy/MM/dd HH:mm'
+        )}]** ${userName}(#${discriminator}) **Delete**：\n${
+          message.content
+        }\n------------------------------------`;
 
-    const channelName = msg.channel.name;
-    const userName = msg.author.username;
-    const discriminator = msg.author.discriminator;
-
-    const sendString = `${channelName} **[Created：${format(
-      msg.createdAt,
-      'yyyy/MM/dd HH:mm'
-    )}]** ${userName}(#${discriminator}) **Delete**：\n${
-      msg.content
-    }\n------------------------------------`;
-
-    sendChannel.send({
-      content: sendString,
-      allowedMentions: { parse: [] },
-    });
+        sendChannel.send({
+          content: sendString,
+          allowedMentions: { parse: [] },
+        });
+      })
+    );
   };
 }
 

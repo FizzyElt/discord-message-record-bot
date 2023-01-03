@@ -1,5 +1,6 @@
 const { Client, IntentsBitField, BitField, GatewayIntentBits } = require('discord.js');
-const { format } = require('date-fns');
+const { format, addSeconds, formatISO } = require('date-fns');
+const O = require('fp-ts/Option');
 const R = require('ramda');
 const {
   readyListener,
@@ -89,12 +90,40 @@ function createObserveList() {
   };
 }
 
+function createBannedList() {
+  const userMap = new Map();
+
+  function banUser(userId, time = 1) {
+    return userMap.set(userId, formatISO(addSeconds(Date.now(), time)));
+  }
+
+  function deleteUser(userId) {
+    return userMap.delete(userId);
+  }
+
+  function listUsers() {
+    return [...userMap.keys()];
+  }
+
+  function getUser(userId) {
+    return O.fromNullable(userMap.get(userId));
+  }
+
+  return {
+    banUser,
+    deleteUser,
+    listUsers,
+    getUser,
+  };
+}
+
 const exclusiveChannelSet = createExclusiveChannels([], {
   id: process.env.BOT_SENDING_CHANNEL_ID,
   name: process.env.BOT_SENDING_CHANNEL_NAME,
 });
 
 const blackList = createObserveList();
+const bannedList = createBanedList();
 
 const client = new Client({
   intents: [
@@ -108,10 +137,13 @@ const client = new Client({
 
 client.on('ready', readyListener(client, exclusiveChannelSet));
 
-client.on('messageCreate', messageCreateListener(client, exclusiveChannelSet, blackList));
+client.on(
+  'messageCreate',
+  messageCreateListener({ client, exclusiveChannelSet, blackList, bannedList })
+);
 
-client.on('messageUpdate', messageUpdateListener(client, exclusiveChannelSet, blackList));
+client.on('messageUpdate', messageUpdateListener({ client, exclusiveChannelSet, blackList }));
 
-client.on('messageDelete', messageDeleteListener(client, exclusiveChannelSet, blackList));
+client.on('messageDelete', messageDeleteListener({ client, exclusiveChannelSet, blackList }));
 
 client.login(process.env.TOKEN);
