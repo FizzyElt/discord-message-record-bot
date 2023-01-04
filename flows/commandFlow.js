@@ -99,7 +99,7 @@ const banUser = (params) => (str) => {
 
 const removeBannedUser = (params) => (str) => {
   const { message, client, bannedList } = params;
-  const userId = pipe(str, R.replace('::removeUser', ''), R.trim);
+  const userId = pipe(str, R.replace('::unbanUser', ''), R.trim);
 
   if (!isAdmin(message.member)) {
     return '你不是管理員，你沒有權限解 ban';
@@ -140,7 +140,7 @@ const commandMapping = ({ client, exclusiveChannelSet, blackList, message, banne
           () => banUser({ client, message, bannedList })(message.content),
         ],
         [
-          matchCommand('::removeUser'),
+          matchCommand('::unbanUser'),
           () => removeBannedUser({ client, message, bannedList })(message.content),
         ],
         [(R.T, R.always('不支援的指令'))],
