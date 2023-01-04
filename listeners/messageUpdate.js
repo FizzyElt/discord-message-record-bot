@@ -7,11 +7,9 @@ function messageUpdateListener({ client, exclusiveChannelSet }) {
   return function (oldMsg, newMsg) {
     pipe(
       O.some({ oldMsg, newMsg, client, exclusiveChannelSet }),
-      O.chain((params) => (params.newMsg.author.bot ? O.none : O.some(params))),
-      O.chain((params) =>
-        params.exclusiveChannelSet.hasChannel(params.newMsg.channelId) ? O.none : O.some(params)
-      ),
-      O.match(R.identity, (params) => {
+      O.filter((params) => !params.newMsg.author.bot),
+      O.filter((params) => !params.exclusiveChannelSet.hasChannel(params.newMsg.channelId)),
+      O.map((params) => {
         const { oldMsg, newMsg, client } = params;
 
         const sendChannel = client.channels.cache.get(process.env.BOT_SENDING_CHANNEL_ID);

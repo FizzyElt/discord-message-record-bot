@@ -3,56 +3,53 @@ const R = require('ramda');
 const O = require('fp-ts/Option');
 const { pipe, flow } = require('fp-ts/function');
 const commandMapping = require('../flows/commandFlow');
+const inviteGuard = require('../flows/inviteGuardFlow');
 
-const commandRegex = /^(\:\:([a-z|A-Z|0-9]*)){1}/g;
+const checkBannedUser = require('../flows/bannedUserFlow');
+
 const discordInviteRegex = /discord\.gg\/(\w|\d)+/;
 
 function messageCreateListener({ client, exclusiveChannelSet, blackList, bannedList }) {
   return async function (message) {
-    // command checking
-    const commandOperationRes = pipe(
-      O.fromNullable(message.content.match(commandRegex)),
-      O.map(flow(R.head, O.fromNullable, O.getOrElse(''))),
-      O.chain((str) => {
-        const getCommandOperation = commandMapping({
-          client,
-          message,
-          exclusiveChannelSet,
-          blackList,
-        });
-
-        const commandOperation = getCommandOperation(str);
-
-        const resolveString = commandOperation(message.content);
-
-        message.channel.send(resolveString);
-        return O.some(str);
-      })
-    );
-
-    if (O.isSome(commandOperationRes)) return;
-
-    const discordInviteClean = pipe(discordInviteRegex.test(message.content), (res) => {
-      if (res) {
-        message.delete();
-        return O.some('delete');
-      }
-      return O.none;
-    });
-
-    if (O.isSome(discordInviteClean)) return;
-
-    // record message flow
     pipe(
-      O.some({ message, client, exclusiveChannelSet }),
-      O.chain((params) => (params.message.author.bot ? O.none : O.some(params))),
-      O.chain((params) =>
-        R.equals(params.message.author.id, params.client.user.id) ? O.none : O.some(params)
+      O.some({ client, message, exclusiveChannelSet, blackList, exclusiveChannelSet, bannedList }),
+      // command message flow
+      O.filter((params) =>
+        pipe(
+          commandMapping({
+            client: params.client,
+            exclusiveChannelSet: params.exclusiveChannelSet,
+            message: params.message,
+            blackList: params.blackList,
+            bannedList: params.bannedList,
+          }),
+
+          O.map(R.tap((res) => params.message.channel.send(res))),
+          O.isSome,
+          R.not
+        )
       ),
-      O.chain((params) =>
-        params.exclusiveChannelSet.hasChannel(params.message.channelId) ? O.none : O.some(params)
+      O.filter((params) =>
+        pipe(
+          checkBannedUser({ message: params.message, bannedList: params.bannedList }),
+          O.map(R.tap((res) => (params.message.delete(), params.message.channel.send(res)))),
+          O.isSome,
+          R.not
+        )
       ),
-      O.match(R.identity, (params) => {
+      // discord invite validation flow
+      O.filter((params) =>
+        pipe(
+          inviteGuard(params.message),
+          O.map(R.tap(() => params.message.delete())),
+          O.isSome,
+          R.not
+        )
+      ),
+      O.filter((params) => !params.message.author.bot),
+      O.filter((params) => !R.equals(params.message.author.id, params.client.user.id)),
+      O.filter((params) => !params.exclusiveChannelSet.hasChannel(params.message.channelId)),
+      O.map((params) => {
         const { client, message } = params;
 
         const sendChannel = client.channels.cache.get(process.env.BOT_SENDING_CHANNEL_ID);

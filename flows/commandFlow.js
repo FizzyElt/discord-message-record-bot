@@ -1,8 +1,11 @@
-const { ChannelType } = require('discord.js');
-const { pipe } = require('fp-ts/function');
+const { ChannelType, PermissionFlagsBits } = require('discord.js');
+const { pipe, constant, flow } = require('fp-ts/function');
+const O = require('fp-ts/Option');
 const R = require('ramda');
 require('dotenv').config();
 const ADMIN_ROLE_ID = process.env.ADMIN_ROLE_ID;
+
+const isAdmin = (member) => member.permissions.has(PermissionFlagsBits.Administrator);
 
 const addChannels = (params) => (str) => {
   const { client, exclusiveChannelSet } = params;
@@ -75,12 +78,75 @@ const listChannels = (exclusiveChannelSet) => (str) => {
   return `目前排除的頻道有：\n${channelNames.join('\n')}`;
 };
 
-const commandMapping = ({ client, exclusiveChannelSet, blackList }) =>
-  R.cond([
-    [R.equals('::addChannels'), R.always(addChannels({ client, exclusiveChannelSet }))],
-    [R.equals('::removeChannels'), R.always(removeChannels({ client, exclusiveChannelSet }))],
-    [R.equals('::listChannels'), R.always(listChannels(exclusiveChannelSet))],
-    [(R.T, R.always(() => '不支援的指令'))],
-  ]);
+const banUser = (params) => (str) => {
+  const { message, client, bannedList } = params;
+  const userId = pipe(str, R.replace('::banUser', ''), R.trim);
+
+  if (!isAdmin(message.member)) {
+    return '不是管理員還敢 ban 人阿';
+  }
+
+  const user = client.users.cache.get(userId);
+
+  if (!user) {
+    return '找不到使用者';
+  }
+
+  bannedList.banUser(user.id, 1);
+
+  return `${user.username} 禁言 ${1} 天`;
+};
+
+const removeBannedUser = (params) => (str) => {
+  const { message, client, bannedList } = params;
+  const userId = pipe(str, R.replace('::removeUser', ''), R.trim);
+
+  if (!isAdmin(message.member)) {
+    return '你不是管理員，你沒有權限解 ban';
+  }
+
+  const user = client.users.cache.get(userId);
+
+  return bannedList.deleteUser(user?.id || '')
+    ? `${user?.username} 重穫自由`
+    : '此人不存在或沒有被禁言';
+};
+
+const commandRegex = /^(\:\:([a-z|A-Z|0-9]*)){1}/g;
+
+const matchCommandString = (str) => str.match(commandRegex);
+
+const matchCommand = (command) => flow(R.head, O.fromNullable, O.getOrElse(''), R.equals(command));
+
+const commandMapping = ({ client, exclusiveChannelSet, blackList, message, bannedList }) => {
+  return pipe(
+    message,
+    R.prop('content'),
+    matchCommandString,
+    O.fromNullable,
+    O.map(
+      R.cond([
+        [
+          matchCommand('::addChannels'),
+          () => addChannels({ client, exclusiveChannelSet })(message.content),
+        ],
+        [
+          matchCommand('::removeChannels'),
+          () => removeChannels({ client, exclusiveChannelSet })(message.content),
+        ],
+        [matchCommand('::listChannels'), () => listChannels(exclusiveChannelSet)(message.content)],
+        [
+          matchCommand('::banUser'),
+          () => banUser({ client, message, bannedList })(message.content),
+        ],
+        [
+          matchCommand('::removeUser'),
+          () => removeBannedUser({ client, message, bannedList })(message.content),
+        ],
+        [(R.T, R.always('不支援的指令'))],
+      ])
+    )
+  );
+};
 
 module.exports = commandMapping;

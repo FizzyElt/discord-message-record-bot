@@ -6,12 +6,10 @@ const { pipe } = require('fp-ts/function');
 function messageDeleteListener({ client, exclusiveChannelSet }) {
   return function (message) {
     pipe(
-      O.some({ message, client }),
-      O.chain((params) => (params.author.bot ? O.none : O.some(params))),
-      O.chain((params) =>
-        params.exclusiveChannelSet.hasChannel(params.message.channelId) ? O.none : O.some(params)
-      ),
-      O.match(R.identity, () => {
+      O.some({ message, client, exclusiveChannelSet }),
+      O.filter((params) => !params.message.author.bot),
+      O.filter((params) => !params.exclusiveChannelSet.hasChannel(params.message.channelId)),
+      O.map((params) => {
         const { client, message } = params;
 
         const sendChannel = client.channels.cache.get(process.env.BOT_SENDING_CHANNEL_ID);
