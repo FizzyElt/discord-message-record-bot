@@ -1,5 +1,5 @@
 const { Client, IntentsBitField, BitField, GatewayIntentBits } = require('discord.js');
-const { format, addSeconds, formatISO, addDays } = require('date-fns');
+const { format, addSeconds, formatISO, addDays, addMinutes } = require('date-fns');
 const O = require('fp-ts/Option');
 const R = require('ramda');
 const {
@@ -94,7 +94,7 @@ function createBannedList() {
   const userMap = new Map();
 
   function banUser(userId, time = 1) {
-    return userMap.set(userId, formatISO(addDays(Date.now(), time)));
+    return userMap.set(userId, formatISO(addMinutes(Date.now(), time)));
   }
 
   function deleteUser(userId) {
