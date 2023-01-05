@@ -92,9 +92,9 @@ const banUser = (params) => (str) => {
     return '找不到使用者';
   }
 
-  bannedList.banUser(user.id, 10);
+  bannedList.banUser(user.id, 30);
 
-  return `${user.username} 禁言 ${10} 分鐘`;
+  return `${user.username} 禁言 ${30} 分鐘`;
 };
 
 const removeBannedUser = (params) => (str) => {
